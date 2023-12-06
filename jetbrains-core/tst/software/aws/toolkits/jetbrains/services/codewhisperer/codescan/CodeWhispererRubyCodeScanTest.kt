@@ -4,11 +4,9 @@
 package software.aws.toolkits.jetbrains.services.codewhisperer.codescan
 
 import com.intellij.openapi.vfs.VirtualFile
-import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Before
 import org.junit.Test
-import org.junit.jupiter.api.assertThrows
 import org.mockito.kotlin.any
 import org.mockito.kotlin.spy
 import org.mockito.kotlin.stub
@@ -25,6 +23,7 @@ class CodeWhispererRubyCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     private lateinit var testRuby: VirtualFile
     private lateinit var utilsRuby: VirtualFile
     private lateinit var helperRuby: VirtualFile
+    private lateinit var sampleRuby: VirtualFile
     private lateinit var sessionConfigSpy: RubyCodeScanSessionConfig
 
     private var totalSize: Long = 0
@@ -49,10 +48,10 @@ class CodeWhispererRubyCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
     fun `test createPayload`() {
         val payload = sessionConfigSpy.createPayload()
         assertNotNull(payload)
-        assertThat(payload.context.totalFiles).isEqualTo(3)
+        assertThat(payload.context.totalFiles).isEqualTo(4)
 
-        assertThat(payload.context.scannedFiles.size).isEqualTo(3)
-        assertThat(payload.context.scannedFiles).containsExactly(testRuby, utilsRuby, helperRuby)
+        assertThat(payload.context.scannedFiles.size).isEqualTo(4)
+        assertThat(payload.context.scannedFiles).containsExactly(testRuby, utilsRuby, helperRuby, sampleRuby)
 
         assertThat(payload.context.srcPayloadSize).isEqualTo(totalSize)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Ruby)
@@ -66,21 +65,25 @@ class CodeWhispererRubyCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
             filesInZip += 1
         }
 
-        assertThat(filesInZip).isEqualTo(3)
+        assertThat(filesInZip).isEqualTo(4)
     }
 
     @Test
     fun `test getSourceFilesUnderProjectRoot`() {
-        assertThat(sessionConfigSpy.getSourceFilesUnderProjectRoot(testRuby).size).isEqualTo(3)
+        getSourceFilesUnderProjectRoot(sessionConfigSpy, testRuby, 4)
     }
 
     @Test
     fun `test parseImport()`() {
         val testRubyImports = sessionConfigSpy.parseImports(testRuby)
         assertThat(testRubyImports.size).isEqualTo(3)
+        assertThat(testRubyImports).contains("utils")
+        assertThat(testRubyImports).contains("helpers/helper")
+        assertThat(testRubyImports).contains("helpers")
 
         val helperRubyImports = sessionConfigSpy.parseImports(helperRuby)
-        assertThat(helperRubyImports.size).isEqualTo(0)
+        assertThat(helperRubyImports.size).isEqualTo(1)
+        assertThat(helperRubyImports).contains("Sample")
 
         val utilsRubyImports = sessionConfigSpy.parseImports(utilsRuby)
         assertThat(utilsRubyImports.size).isEqualTo(0)
@@ -97,29 +100,17 @@ class CodeWhispererRubyCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
 
     @Test
     fun `test includeDependencies()`() {
-        val payloadMetadata = sessionConfigSpy.includeDependencies()
-        assertNotNull(payloadMetadata)
-        val (includedSourceFiles, srcPayloadSize, totalLines) = payloadMetadata
-        assertThat(includedSourceFiles.size).isEqualTo(3)
-        assertThat(srcPayloadSize).isEqualTo(totalSize)
-        assertThat(totalLines).isEqualTo(this.totalLines)
+        includeDependencies(sessionConfigSpy, 4, totalSize, this.totalLines, 0)
     }
 
     @Test
     fun `test getTotalProjectSizeInBytes()`() {
-        runBlocking {
-            assertThat(sessionConfigSpy.getTotalProjectSizeInBytes()).isEqualTo(totalSize)
-        }
+        getTotalProjectSizeInBytes(sessionConfigSpy, this.totalSize)
     }
 
     @Test
     fun `selected file larger than payload limit throws exception`() {
-        sessionConfigSpy.stub {
-            onGeneric { getPayloadLimitInBytes() }.thenReturn(100)
-        }
-        assertThrows<CodeWhispererCodeScanException> {
-            sessionConfigSpy.createPayload()
-        }
+        selectedFileLargerThanPayloadSizeThrowsException(sessionConfigSpy)
     }
 
     @Test
@@ -131,14 +122,14 @@ class CodeWhispererRubyCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         assertNotNull(payload)
         assertThat(sessionConfigSpy.isProjectTruncated()).isTrue
 
-        assertThat(payload.context.totalFiles).isEqualTo(2)
+        assertThat(payload.context.totalFiles).isEqualTo(3)
 
-        assertThat(payload.context.scannedFiles.size).isEqualTo(2)
-        assertThat(payload.context.scannedFiles).containsExactly(testRuby, utilsRuby)
+        assertThat(payload.context.scannedFiles.size).isEqualTo(3)
+        assertThat(payload.context.scannedFiles).containsExactly(testRuby, utilsRuby, helperRuby)
 
-        assertThat(payload.context.srcPayloadSize).isEqualTo(259)
+        assertThat(payload.context.srcPayloadSize).isEqualTo(790)
         assertThat(payload.context.language).isEqualTo(CodewhispererLanguage.Ruby)
-        assertThat(payload.context.totalLines).isEqualTo(20)
+        assertThat(payload.context.totalLines).isEqualTo(49)
         assertNotNull(payload.srcZip)
 
         val bufferedInputStream = BufferedInputStream(payload.srcZip.inputStream())
@@ -148,12 +139,12 @@ class CodeWhispererRubyCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
             filesInZip += 1
         }
 
-        assertThat(filesInZip).isEqualTo(2)
+        assertThat(filesInZip).isEqualTo(3)
     }
 
     @Test
     fun `e2e happy path integration test`() {
-        assertE2ERunsSuccessfully(sessionConfigSpy, project, totalLines, 3, totalSize, 2)
+        assertE2ERunsSuccessfully(sessionConfigSpy, project, totalLines, 4, totalSize, 2)
     }
 
     private fun setupRubyProject() {
@@ -161,7 +152,7 @@ class CodeWhispererRubyCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
             "/test.rb",
             """
                 require 'utils'
-                require 'helpers/helper'
+                require_relative 'helpers/helper'
                 
                 a = 1
                 b = 2
@@ -193,9 +184,37 @@ class CodeWhispererRubyCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
         totalSize += utilsRuby.length
         totalLines += utilsRuby.toNioPath().toFile().readLines().size
 
+        sampleRuby = projectRule.fixture.addFileToProject(
+            "/sample.rb",
+            """
+                include Math
+                module Sample
+                    def tower_of_hanoi(n, source, auxiliary, target)
+                        if n > 0
+                        # Move n - 1 disks from source to auxiliary peg
+                        tower_of_hanoi(n - 1, source, target, auxiliary)
+                        
+                        # Move the nth disk from source to target peg
+                        puts "Move disk #{n} from #{source} to #{target}"
+                        
+                        # Move the n - 1 disks from auxiliary to target peg
+                        tower_of_hanoi(n - 1, auxiliary, source, target)
+                        end
+                    end
+                    def max_of_two_numbers(num1, num2)
+                        result = Math.max(num1, num2)
+                        return result
+                    end
+                end
+            """.trimIndent()
+        ).virtualFile
+        totalSize += sampleRuby.length
+        totalLines += sampleRuby.toNioPath().toFile().readLines().size
+
         helperRuby = projectRule.fixture.addFileToProject(
             "/helpers/helper.rb",
             """
+                load 'Sample.rb'
                 module Helper
                     def self.subtract(a, b)
                     a - b
@@ -222,18 +241,6 @@ class CodeWhispererRubyCodeScanTest : CodeWhispererCodeScanTestBase(PythonCodeIn
                         end
                         
                         arr
-                    end
-                    def tower_of_hanoi(n, source, auxiliary, target)
-                        if n > 0
-                        # Move n - 1 disks from source to auxiliary peg
-                        tower_of_hanoi(n - 1, source, target, auxiliary)
-                        
-                        # Move the nth disk from source to target peg
-                        puts "Move disk #{n} from #{source} to #{target}"
-                        
-                        # Move the n - 1 disks from auxiliary to target peg
-                        tower_of_hanoi(n - 1, auxiliary, source, target)
-                        end
                     end
                 end
             """.trimIndent()
