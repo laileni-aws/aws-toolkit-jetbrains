@@ -5,13 +5,23 @@ package software.aws.toolkits.jetbrains.services.caws
 
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
 import software.aws.toolkits.jetbrains.core.ClientBackedCachedResource
+import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsRootNode
 import java.time.Duration
+import software.aws.toolkits.core.utils.getLogger
+import software.aws.toolkits.core.utils.warn
 
 object CawsResources {
     val ID = ClientBackedCachedResource(CodeCatalystClient::class, "caws.person.id", Duration.ofDays(1)) {
-        val session = verifySession {}
+        try {
+            val session = verifySession {}
 
-        session.identity()
+            session.identity()
+        } catch (e: AccessDeniedException) {
+            val LOG = getLogger<CawsResources>()
+            LOG.warn { "Access Denied $e" }
+            CawsRootNode.accessDeniedBoolean = true
+            throw e
+        }
     }
 
     val PERSON = ClientBackedCachedResource(CodeCatalystClient::class, "caws.person", Duration.ofDays(1)) {

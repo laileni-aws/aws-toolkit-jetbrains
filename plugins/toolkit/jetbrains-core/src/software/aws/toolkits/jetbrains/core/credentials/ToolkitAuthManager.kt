@@ -23,6 +23,7 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
+import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsRootNode
 import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionCW
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
@@ -279,7 +280,7 @@ fun maybeReauthProviderIfNeeded(
                 return true
             }
         }
-
-        BearerTokenAuthState.AUTHORIZED -> { return false }
+        BearerTokenAuthState.AUTHORIZED -> { return CawsRootNode.Companion.accessDeniedBoolean }
+//      BearerTokenAuthState.AUTHORIZED -> { return false }
     }
 }

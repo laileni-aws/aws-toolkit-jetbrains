@@ -19,6 +19,7 @@ import software.aws.toolkits.core.utils.debug
 import software.aws.toolkits.core.utils.getLogger
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.core.utils.warn
+import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsRootNode
 import java.net.URI
 
 class CawsClientCustomizer : ToolkitClientCustomizer {
@@ -48,6 +49,12 @@ class CawsClientCustomizer : ToolkitClientCustomizer {
                 override fun onExecutionFailure(context: Context.FailedExecution, executionAttributes: ExecutionAttributes) {
                     val exception = context.exception()
                     if (exception is CodeCatalystException) {
+                        if (exception is AccessDeniedException) {
+                            LOG.warn { "Access Denied exception because of PE in CawsClientCustomizer" }
+                            CawsRootNode.accessDeniedBoolean = true
+//                            throw exception
+                        }
+
                         context.httpResponse().ifPresent { response ->
                             response.firstMatchingHeader("x-amzn-served-from").ifPresent {
                                 LOG.warn { "Hit service exception. ${exception.requestId()} was served from $it" }

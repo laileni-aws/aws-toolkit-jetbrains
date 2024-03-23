@@ -17,16 +17,18 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnecti
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.ActiveConnectionType
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.BearerTokenFeatureSet
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.checkBearerConnectionValidity
+import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.resources.message
 
 class CawsRootNode(private val nodeProject: Project) : AbstractTreeNode<String>(nodeProject, CawsServiceNode.NODE_NAME), PinnedConnectionNode {
     override fun getChildren(): Collection<AbstractTreeNode<*>> {
         val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST)
-        val groupId = when (connection) {
-            is ActiveConnection.NotConnected -> CAWS_SIGNED_OUT_ACTION_GROUP
-            is ActiveConnection.ValidBearer -> CAWS_SIGNED_IN_ACTION_GROUP
-            else -> CAWS_EXPIRED_TOKEN_ACTION_GROUP
+        val groupId = when {
+            connection is ActiveConnection.ValidBearer && !isCodeWhispererExpired(project) && accessDeniedBoolean -> CAWS_EXPIRED_TOKEN_ACTION_GROUP
+            connection is ActiveConnection.NotConnected -> CAWS_SIGNED_OUT_ACTION_GROUP
+            connection is ActiveConnection.ExpiredBearer -> CAWS_EXPIRED_TOKEN_ACTION_GROUP
+            else -> CAWS_SIGNED_IN_ACTION_GROUP
         }
         val actions = ActionManager.getInstance().getAction(groupId) as ActionGroup
         return actions.getChildren(null).mapNotNull {
@@ -56,6 +58,7 @@ class CawsRootNode(private val nodeProject: Project) : AbstractTreeNode<String>(
 
     override fun feature() = CodeCatalystConnection.getInstance()
     companion object {
+        var accessDeniedBoolean: Boolean = false
         const val CAWS_SIGNED_IN_ACTION_GROUP = "aws.caws.devtools.actions.loggedin"
         const val CAWS_SIGNED_OUT_ACTION_GROUP = "aws.caws.devtools.actions.loggedout"
         const val CAWS_EXPIRED_TOKEN_ACTION_GROUP = "aws.caws.devtools.actions.expired"
