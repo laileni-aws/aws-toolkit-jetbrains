@@ -19,11 +19,11 @@ import software.aws.toolkits.core.utils.info
 import software.aws.toolkits.core.utils.warn
 import software.aws.toolkits.jetbrains.core.credentials.pinning.FeatureWithPinnedConnection
 import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConstants.SSO_SESSION_SECTION_NAME
+import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.isSono
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProviderListener
-import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsRootNode
 import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionCW
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
 import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
@@ -272,7 +272,8 @@ fun maybeReauthProviderIfNeeded(
                 return runUnderProgressIfNeeded(project, message("credentials.refreshing"), true) {
                     tokenProvider.resolveToken()
                     BearerTokenProviderListener.notifyCredUpdate(tokenProvider.id)
-                    return@runUnderProgressIfNeeded false
+//                    return@runUnderProgressIfNeeded CawsRootNode.Companion.accessDeniedErrorValue
+                    return@runUnderProgressIfNeeded CodeCatalystCredentialManager.getInstance(project).checkPartialExpiration()
                 }
             } catch (e: SsoOidcException) {
                 getLogger<ToolkitAuthManager>().warn(e) { "Redriving bearer token login flow since token could not be refreshed" }
@@ -280,6 +281,7 @@ fun maybeReauthProviderIfNeeded(
                 return true
             }
         }
-        BearerTokenAuthState.AUTHORIZED -> { return CawsRootNode.Companion.accessDeniedErrorValue }
+        BearerTokenAuthState.AUTHORIZED -> return CodeCatalystCredentialManager.getInstance(project).checkPartialExpiration()
+//        BearerTokenAuthState.AUTHORIZED ->  return CawsRootNode.Companion.accessDeniedErrorValue
     }
 }

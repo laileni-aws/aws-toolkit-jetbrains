@@ -7,10 +7,13 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.dsl.builder.panel
+import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
+import software.amazon.awssdk.services.codecatalyst.model.AccessDeniedException
 import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.telemetry.DefaultMetricEvent
 import software.aws.toolkits.core.utils.tryOrNull
 import software.aws.toolkits.jetbrains.core.AwsResourceCache
+import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
@@ -18,6 +21,7 @@ import software.aws.toolkits.jetbrains.core.credentials.maybeReauthProviderIfNee
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
+import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForCodeCatalyst
 import software.aws.toolkits.jetbrains.services.caws.CawsResources
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
@@ -87,6 +91,7 @@ class CodeCatalystCredentialManager {
                     runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
                         tokenProvider.reauthenticate()
                     }
+                    project?.refreshDevToolTree()
                     return tokenProvider
                 } else {
                     return newCredentialRequest()
@@ -117,6 +122,17 @@ class CodeCatalystCredentialManager {
     }
 
     fun isConnected(): Boolean = connection()?.let { provider(it).state() != BearerTokenAuthState.NOT_AUTHENTICATED } ?: false
+    fun checkPartialExpiration(): Boolean {
+        try {
+            val connection = getConnectionSettings()
+                ?: error("Failed to fetch connection settings from CodeCatalyst dev environment")
+            val client = connection.awsClient<CodeCatalystClient>()
+            client.verifySession {}
+        } catch (e: AccessDeniedException) {
+            return true
+        }
+        return false
+    }
 
     inner class SignInWithTheCurrentCredentials(project: Project?, private val accountType: String) : DialogWrapper(project) {
 

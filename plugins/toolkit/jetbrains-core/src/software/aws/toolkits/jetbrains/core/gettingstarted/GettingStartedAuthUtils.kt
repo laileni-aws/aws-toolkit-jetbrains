@@ -37,7 +37,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
-import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsRootNode
 import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConnections
@@ -331,6 +330,7 @@ fun requestCredentialsForCodeCatalyst(
 
     val isAuthenticationSuccessful = authenticationDialog.showAndGet()
     if (isAuthenticationSuccessful) {
+//        CawsRootNode.accessDeniedErrorValue = false // To reset the boolean AaccesDeniedErrorValue to "false" after successful login.
         AuthTelemetry.addConnection(
             project,
             source = getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),
@@ -350,7 +350,6 @@ fun requestCredentialsForCodeCatalyst(
             attempts = authenticationDialog.attempts + 1,
             result = Result.Succeeded
         )
-        CawsRootNode.accessDeniedErrorValue = false // To reset the boolean AaccesDeniedErrorValue to "false" after successful login.
         project?.refreshDevToolTree()
     } else {
         AuthTelemetry.addConnection(
@@ -363,6 +362,7 @@ fun requestCredentialsForCodeCatalyst(
             result = Result.Cancelled,
         )
     }
+    project?.refreshDevToolTree()
     return isAuthenticationSuccessful
 }
 
