@@ -3,11 +3,10 @@
 
 package software.aws.toolkits.jetbrains.core.gettingstarted.editor
 
-import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.project.Project
 import com.intellij.ui.dsl.builder.Panel
 import software.amazon.awssdk.services.codecatalyst.CodeCatalystClient
-import software.amazon.awssdk.services.codecatalyst.model.CodeCatalystException
+import software.amazon.awssdk.services.codecatalyst.model.AccessDeniedException
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.jetbrains.core.awsClient
 import software.aws.toolkits.jetbrains.core.credentials.AwsBearerTokenConnection
@@ -24,7 +23,6 @@ import software.aws.toolkits.jetbrains.core.credentials.profiles.SsoSessionConst
 import software.aws.toolkits.jetbrains.core.credentials.sono.CodeCatalystCredentialManager
 import software.aws.toolkits.jetbrains.core.credentials.sono.SONO_URL
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsRootNode
-import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.SourceOfEntry
 import software.aws.toolkits.jetbrains.services.codewhisperer.explorer.isCodeWhispererExpired
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
@@ -105,21 +103,23 @@ fun checkBearerConnectionValidity(project: Project, source: BearerTokenFeatureSe
     } ?: return ActiveConnection.NotConnected
 
     activeConnection as AwsBearerTokenConnection
-if(source == BearerTokenFeatureSet.CODECATALYST && !CawsRootNode.accessDeniedBoolean){
-    try {
-        val connection = CodeCatalystCredentialManager.getInstance(project).getConnectionSettings()
-            ?: error("Failed to fetch connection settings from Dev Environment")
-        val client = connection.awsClient<CodeCatalystClient>()
-        client.verifySession{}
-    } catch (e: CodeCatalystException){
-        CawsRootNode.accessDeniedBoolean = true;
+
+    if (source == BearerTokenFeatureSet.CODECATALYST &&
+        !isCodeWhispererExpired(project) &&
+        !CawsRootNode.accessDeniedErrorValue
+    ) {
+        CodeCatalystCredentialManager.getInstance(project)?.let { CodeCatalystManager ->
+            try {
+                val connection = CodeCatalystManager.getConnectionSettings()
+                    ?: error("Failed to fetch connection settings from Dev Environment")
+                val client = connection.awsClient<CodeCatalystClient>()
+                client.verifySession {}
+            } catch (e: AccessDeniedException) {
+                CawsRootNode.accessDeniedErrorValue = true
+            }
+        }
     }
-}
-    // This is signing out both CWSPR and CC
-//    if(!isCodeWhispererExpired(project) &&  source == BearerTokenFeatureSet.CODECATALYST && CawsRootNode.accessDeniedBoolean){
-//        val connectionType = if (activeConnection.startUrl == SONO_URL) ActiveConnectionType.BUILDER_ID else ActiveConnectionType.IAM_IDC
-//       return ActiveConnection.ExpiredBearer(activeConnection, connectionType)
-//    }
+
     val connectionType = if (activeConnection.startUrl == SONO_URL) ActiveConnectionType.BUILDER_ID else ActiveConnectionType.IAM_IDC
     return if (activeConnection.lazyIsUnauthedBearerConnection()) {
         ActiveConnection.ExpiredBearer(activeConnection, connectionType)

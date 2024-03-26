@@ -280,7 +280,6 @@ fun maybeReauthProviderIfNeeded(
                 return true
             }
         }
-        BearerTokenAuthState.AUTHORIZED -> { return CawsRootNode.Companion.accessDeniedBoolean }
-//      BearerTokenAuthState.AUTHORIZED -> { return false }
+        BearerTokenAuthState.AUTHORIZED -> { return CawsRootNode.Companion.accessDeniedErrorValue }
     }
 }

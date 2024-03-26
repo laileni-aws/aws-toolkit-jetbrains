@@ -25,7 +25,7 @@ class CawsRootNode(private val nodeProject: Project) : AbstractTreeNode<String>(
     override fun getChildren(): Collection<AbstractTreeNode<*>> {
         val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST)
         val groupId = when {
-            connection is ActiveConnection.ValidBearer && !isCodeWhispererExpired(project) && accessDeniedBoolean -> CAWS_EXPIRED_TOKEN_ACTION_GROUP
+            connection is ActiveConnection.ValidBearer && !isCodeWhispererExpired(project) && accessDeniedErrorValue -> CAWS_EXPIRED_TOKEN_ACTION_GROUP
             connection is ActiveConnection.NotConnected -> CAWS_SIGNED_OUT_ACTION_GROUP
             connection is ActiveConnection.ExpiredBearer -> CAWS_EXPIRED_TOKEN_ACTION_GROUP
             else -> CAWS_SIGNED_IN_ACTION_GROUP
@@ -43,22 +43,21 @@ class CawsRootNode(private val nodeProject: Project) : AbstractTreeNode<String>(
     override fun update(presentation: PresentationData) {
         presentation.addText(value, SimpleTextAttributes.REGULAR_ATTRIBUTES)
         val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST)
-        val connectionText = when (connection) {
-            is ActiveConnection.ValidBearer -> {
-                when (connection.connectionType) {
-                    ActiveConnectionType.BUILDER_ID -> message("caws.connected.builder_id")
-                    else -> message("caws.connected.identity_center")
-                }
+        val connectionText = when {
+            connection is ActiveConnection.ValidBearer && !isCodeWhispererExpired(project) && accessDeniedErrorValue -> message("caws.expired.connection")
+            connection is ActiveConnection.NotConnected -> null
+            connection is ActiveConnection.ExpiredBearer -> message("caws.expired.connection")
+            else -> when (connection.connectionType) {
+                ActiveConnectionType.BUILDER_ID -> message("caws.connected.builder_id")
+                else -> message("caws.connected.identity_center")
             }
-            is ActiveConnection.NotConnected -> null
-            else -> message("caws.expired.connection")
         }
         presentation.addText(connectionText, SimpleTextAttributes.GRAY_ATTRIBUTES)
     }
 
     override fun feature() = CodeCatalystConnection.getInstance()
     companion object {
-        var accessDeniedBoolean: Boolean = false
+        var accessDeniedErrorValue: Boolean = false
         const val CAWS_SIGNED_IN_ACTION_GROUP = "aws.caws.devtools.actions.loggedin"
         const val CAWS_SIGNED_OUT_ACTION_GROUP = "aws.caws.devtools.actions.loggedout"
         const val CAWS_EXPIRED_TOKEN_ACTION_GROUP = "aws.caws.devtools.actions.expired"
