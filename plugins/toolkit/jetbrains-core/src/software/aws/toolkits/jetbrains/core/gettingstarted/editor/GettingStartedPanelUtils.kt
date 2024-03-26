@@ -108,15 +108,13 @@ fun checkBearerConnectionValidity(project: Project, source: BearerTokenFeatureSe
         !isCodeWhispererExpired(project) &&
         !CawsRootNode.accessDeniedErrorValue
     ) {
-        CodeCatalystCredentialManager.getInstance(project)?.let { CodeCatalystManager ->
-            try {
-                val connection = CodeCatalystManager.getConnectionSettings()
-                    ?: error("Failed to fetch connection settings from Dev Environment")
-                val client = connection.awsClient<CodeCatalystClient>()
-                client.verifySession {}
-            } catch (e: AccessDeniedException) {
-                CawsRootNode.accessDeniedErrorValue = true
-            }
+        try {
+            val connection = CodeCatalystCredentialManager.getInstance(project).getConnectionSettings()
+                ?: error("Failed to fetch connection settings from CodeCatalyst dev environment")
+            val client = connection.awsClient<CodeCatalystClient>()
+            client.verifySession {}
+        } catch (e: AccessDeniedException) {
+            CawsRootNode.accessDeniedErrorValue = true
         }
     }
 

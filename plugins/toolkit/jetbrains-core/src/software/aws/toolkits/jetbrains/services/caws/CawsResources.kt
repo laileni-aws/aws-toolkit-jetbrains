@@ -9,9 +9,9 @@ import java.time.Duration
 
 object CawsResources {
     val ID = ClientBackedCachedResource(CodeCatalystClient::class, "caws.person.id", Duration.ofDays(1)) {
-            val session = verifySession {}
+        val session = verifySession {}
 
-            session.identity()
+        session.identity()
     }
 
     val PERSON = ClientBackedCachedResource(CodeCatalystClient::class, "caws.person", Duration.ofDays(1)) {
