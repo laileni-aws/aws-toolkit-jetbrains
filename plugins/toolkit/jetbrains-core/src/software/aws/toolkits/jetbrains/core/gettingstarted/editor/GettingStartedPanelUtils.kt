@@ -97,7 +97,6 @@ fun checkBearerConnectionValidity(project: Project, source: BearerTokenFeatureSe
     } ?: return ActiveConnection.NotConnected
 
     activeConnection as AwsBearerTokenConnection
-
     val connectionType = if (activeConnection.startUrl == SONO_URL) ActiveConnectionType.BUILDER_ID else ActiveConnectionType.IAM_IDC
     return if (activeConnection.lazyIsUnauthedBearerConnection()) {
         ActiveConnection.ExpiredBearer(activeConnection, connectionType)

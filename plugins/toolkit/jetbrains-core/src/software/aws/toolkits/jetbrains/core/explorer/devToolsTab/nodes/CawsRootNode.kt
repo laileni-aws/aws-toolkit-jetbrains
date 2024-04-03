@@ -26,6 +26,7 @@ class CawsRootNode(private val nodeProject: Project) : AbstractTreeNode<String>(
     override fun getChildren(): Collection<AbstractTreeNode<*>> {
         val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST)
         val groupId = when {
+            // if connection token is valid, CodeWhisperer is not expired and CodeCatalyst is expired consider this condition as Partial Expiration.
             connection is ActiveConnection.ValidBearer && !isCodeWhispererExpired(project) &&
                 CodeCatalystCredentialManager.getInstance(project).checkPartialExpiration() -> CAWS_EXPIRED_TOKEN_ACTION_GROUP
             connection is ActiveConnection.NotConnected -> CAWS_SIGNED_OUT_ACTION_GROUP
@@ -46,10 +47,15 @@ class CawsRootNode(private val nodeProject: Project) : AbstractTreeNode<String>(
         presentation.addText(value, SimpleTextAttributes.REGULAR_ATTRIBUTES)
         val connection = checkBearerConnectionValidity(project, BearerTokenFeatureSet.CODECATALYST)
         val connectionText = when {
+            /*
+            This "update" function is called regularly so we can not make a service call for every execution.
+            This condition checks for the Paritial expiration to display "Expired Connection" text next to CodeCatalyst in Developer Tools.
+             */
+            /*
             connection is ActiveConnection.ValidBearer && !isCodeWhispererExpired(project) &&
                 CodeCatalystCredentialManager.getInstance(project).checkPartialExpiration() -> message(
                 "caws.expired.connection"
-            )
+            )*/
             connection is ActiveConnection.NotConnected -> null
             connection is ActiveConnection.ExpiredBearer -> message("caws.expired.connection")
             else -> when (connection.connectionType) {
@@ -62,7 +68,6 @@ class CawsRootNode(private val nodeProject: Project) : AbstractTreeNode<String>(
 
     override fun feature() = CodeCatalystConnection.getInstance()
     companion object {
-//        var accessDeniedErrorValue: Boolean = false
         const val CAWS_SIGNED_IN_ACTION_GROUP = "aws.caws.devtools.actions.loggedin"
         const val CAWS_SIGNED_OUT_ACTION_GROUP = "aws.caws.devtools.actions.loggedout"
         const val CAWS_EXPIRED_TOKEN_ACTION_GROUP = "aws.caws.devtools.actions.expired"

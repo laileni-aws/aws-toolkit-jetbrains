@@ -330,7 +330,6 @@ fun requestCredentialsForCodeCatalyst(
 
     val isAuthenticationSuccessful = authenticationDialog.showAndGet()
     if (isAuthenticationSuccessful) {
-//        CawsRootNode.accessDeniedErrorValue = false // To reset the boolean AaccesDeniedErrorValue to "false" after successful login.
         AuthTelemetry.addConnection(
             project,
             source = getSourceOfEntry(SourceOfEntry.CODECATALYST, isFirstInstance, connectionInitiatedFromExplorer),

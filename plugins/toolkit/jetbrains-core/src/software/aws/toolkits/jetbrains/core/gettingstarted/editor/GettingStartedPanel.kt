@@ -550,7 +550,6 @@ class GettingStartedPanel(
         private fun handleCodeCatalystLogin(authResult: Boolean, revertToPanel: Panel) {
             handleLogin(authResult)
             if (authResult) {
-//                CawsRootNode.accessDeniedErrorValue=false
                 controlPanelVisibility(panelConnectionInProgress, panelConnected)
 
                 val tooltip = GotItTooltip(

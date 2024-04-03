@@ -91,6 +91,7 @@ class CodeCatalystCredentialManager {
                     runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
                         tokenProvider.reauthenticate()
                     }
+                    // Refresh the Developer Tools after successful login
                     project?.refreshDevToolTree()
                     return tokenProvider
                 } else {
@@ -122,6 +123,12 @@ class CodeCatalystCredentialManager {
     }
 
     fun isConnected(): Boolean = connection()?.let { provider(it).state() != BearerTokenAuthState.NOT_AUTHENTICATED } ?: false
+
+    /*
+     * This function checks for Access Denied Errors by making a service call to one of the CodeCatalyst functions.
+     * Return true if AccessDeniedException occurred
+     * Return false if CodeCatalyst connection is valid.
+     * */
     fun checkPartialExpiration(): Boolean {
         try {
             val connection = getConnectionSettings()
