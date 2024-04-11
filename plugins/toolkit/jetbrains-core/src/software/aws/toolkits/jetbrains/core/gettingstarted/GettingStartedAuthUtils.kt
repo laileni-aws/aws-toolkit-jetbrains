@@ -15,6 +15,7 @@ import software.amazon.awssdk.profiles.ProfileProperty
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
+import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.tryOrNull
@@ -28,6 +29,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ToolkitAuthManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.UserConfigSsoSessionProfile
 import software.aws.toolkits.jetbrains.core.credentials.loginSso
+import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeWhispererConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.QConnection
 import software.aws.toolkits.jetbrains.core.credentials.profiles.ProfileCredentialsIdentifierSso
@@ -37,12 +39,14 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.CODECATALYST_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
+import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
 import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConnections
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getSourceOfEntry
 import software.aws.toolkits.jetbrains.core.region.AwsRegionProvider
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints.CAWS_DOCS
+import software.aws.toolkits.jetbrains.utils.runUnderProgressIfNeeded
 import software.aws.toolkits.resources.message
 import software.aws.toolkits.telemetry.AuthTelemetry
 import software.aws.toolkits.telemetry.FeatureId
@@ -363,6 +367,15 @@ fun requestCredentialsForCodeCatalyst(
     }
     project?.refreshDevToolTree()
     return isAuthenticationSuccessful
+}
+//Reauth for CC
+fun reauthenticateWithCodeCatalyst(project: Project) {
+    val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance())
+    if (connection !is ManagedBearerSsoConnection) return
+    val connectionCC = connection.getConnectionSettings().tokenProvider.delegate as BearerTokenProvider
+    runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
+        connectionCC.reauthenticate()
+    }
 }
 
 fun reauthenticateWithQ(project: Project) {

@@ -279,6 +279,7 @@ fun maybeReauthProviderIfNeeded(
                 return true
             }
         }
+
         BearerTokenAuthState.AUTHORIZED -> { return false }
     }
 }
