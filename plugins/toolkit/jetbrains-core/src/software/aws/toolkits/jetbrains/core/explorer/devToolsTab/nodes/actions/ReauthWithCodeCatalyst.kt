@@ -10,7 +10,6 @@ import com.intellij.openapi.project.DumbAwareAction
 import software.aws.toolkits.jetbrains.core.gettingstarted.reauthenticateWithCodeCatalyst
 import software.aws.toolkits.jetbrains.utils.notifyWarn
 import software.aws.toolkits.resources.AwsToolkitBundle
-import software.aws.toolkits.telemetry.UiTelemetry
 
 class ReauthWithCodeCatalyst : DumbAwareAction(AllIcons.Actions.Copy) {
     override fun actionPerformed(e: AnActionEvent) {

@@ -15,7 +15,6 @@ import software.amazon.awssdk.profiles.ProfileProperty
 import software.amazon.awssdk.services.ssooidc.model.InvalidGrantException
 import software.amazon.awssdk.services.ssooidc.model.InvalidRequestException
 import software.amazon.awssdk.services.ssooidc.model.SsoOidcException
-import software.aws.toolkits.core.TokenConnectionSettings
 import software.aws.toolkits.core.credentials.CredentialIdentifier
 import software.aws.toolkits.core.utils.error
 import software.aws.toolkits.core.utils.tryOrNull
@@ -365,7 +364,8 @@ fun requestCredentialsForCodeCatalyst(
     }
     return isAuthenticationSuccessful
 }
-//Reauth for CC
+
+// Reauth for CC
 fun reauthenticateWithCodeCatalyst(project: Project) {
     val connection = ToolkitConnectionManager.getInstance(project).activeConnectionForFeature(CodeCatalystConnection.getInstance())
     if (connection !is ManagedBearerSsoConnection) return

@@ -21,7 +21,6 @@ import software.aws.toolkits.jetbrains.core.credentials.maybeReauthProviderIfNee
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenAuthState
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
-import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsForCodeCatalyst
 import software.aws.toolkits.jetbrains.services.caws.CawsResources
 import software.aws.toolkits.jetbrains.utils.computeOnEdt
@@ -91,8 +90,8 @@ class CodeCatalystCredentialManager {
                     runUnderProgressIfNeeded(project, message("credentials.pending.title"), true) {
                         tokenProvider.reauthenticate()
                     }
-                    // Refresh the Developer Tools after successful login
-                    project?.refreshDevToolTree()
+//                    // Refresh the Developer Tools after successful login
+//                    project?.refreshDevToolTree()
                     return tokenProvider
                 } else {
                     return newCredentialRequest()
