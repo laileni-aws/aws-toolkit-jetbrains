@@ -40,7 +40,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sono.CODEWHISPERER_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.IDENTITY_CENTER_ROLE_ACCESS_SCOPE
 import software.aws.toolkits.jetbrains.core.credentials.sono.Q_SCOPES
 import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenProvider
-import software.aws.toolkits.jetbrains.core.explorer.refreshDevToolTree
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getConnectionCount
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getEnabledConnections
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.getSourceOfEntry
@@ -353,7 +352,6 @@ fun requestCredentialsForCodeCatalyst(
             attempts = authenticationDialog.attempts + 1,
             result = Result.Succeeded
         )
-        project?.refreshDevToolTree()
     } else {
         AuthTelemetry.addConnection(
             project,
@@ -365,7 +363,6 @@ fun requestCredentialsForCodeCatalyst(
             result = Result.Cancelled,
         )
     }
-    project?.refreshDevToolTree()
     return isAuthenticationSuccessful
 }
 //Reauth for CC

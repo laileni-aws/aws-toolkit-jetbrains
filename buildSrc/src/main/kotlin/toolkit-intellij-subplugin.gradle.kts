@@ -53,6 +53,9 @@ configurations {
     }
 
     all {
+        // IDE provides netty
+        exclude("io.netty")
+
         if (name.startsWith("detekt")) {
             return@all
         }
@@ -73,6 +76,11 @@ configurations {
 
 tasks.processResources {
     // needed because both rider and ultimate include plugin-datagrip.xml which we are fine with
+    duplicatesStrategy = DuplicatesStrategy.WARN
+}
+
+tasks.processTestResources {
+    // TODO how can we remove this
     duplicatesStrategy = DuplicatesStrategy.WARN
 }
 
@@ -185,36 +193,32 @@ tasks.runIde {
     }
 }
 
-configurations.instrumentedJar.configure {
-    // when the "instrumentedJar" configuration is selected, gradle is unable to resolve configurations needed by jacoco
-    // to calculate coverage, so we declare these as seconary artifacts on the primary "instrumentedJar" implicit variant
-    outgoing.variants {
-        create("instrumentedClasses") {
-            attributes {
-                attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
-                attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.LIBRARY))
-                attribute(Bundling.BUNDLING_ATTRIBUTE, objects.named(Bundling.EXTERNAL))
-                attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements.CLASSES))
-            }
+// rewrite `runtimeElements` to use the `instrumentedJar` variant
+// there should never be a reason to use the default artifact at runtime, but `testFixturesRuntimeElements` pulls in `runtimeElements`
+// which is causing conflict between the `runtimeElements` and `instrumentedJar` variants
+// additionally more cleanly solves another headache from the IDE defaulting to instrumented classes while navigating between modules
+configurations.runtimeElements {
+    // remove the default artifact and replace with the instrumented jar
+    outgoing.artifacts.clear()
+    outgoing.artifacts(configurations.instrumentedJar.map { it.artifacts })
 
+    // replace default classes with instrumented classes
+    outgoing.variants {
+        get("classes").apply {
+            artifacts.clear()
             artifact(tasks.instrumentCode) {
                 type = ArtifactTypeDefinition.JVM_CLASS_DIRECTORY
             }
         }
-
-        listOf("coverageDataElements", "mainSourceElements").forEach { implicitVariant ->
-            val configuration = configurations.getByName(implicitVariant)
-            create(implicitVariant) {
-                attributes {
-                    configuration.attributes.keySet().forEach {
-                        attribute(it as Attribute<Any>, configuration.attributes.getAttribute(it)!!)
-                    }
-                }
-
-                configuration.artifacts.forEach {
-                    artifact(it)
-                }
-            }
-        }
     }
+}
+
+// 1.x declares dependsOn, but we want mustRunAfter
+// https://github.com/JetBrains/intellij-platform-gradle-plugin/blob/47e2de88e86ffdefd3f6f45c2bb3181366ee4fa4/src/main/kotlin/org/jetbrains/intellij/IntelliJPlugin.kt#L1702
+tasks.classpathIndexCleanup {
+    dependsOn.clear()
+
+    project.tasks
+        .runCatching { named("compileTestKotlin") }
+        .onSuccess { mustRunAfter(it) }
 }

@@ -44,6 +44,7 @@ import software.aws.toolkits.jetbrains.core.credentials.ProfileSsoManagedBearerS
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnection
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManager
 import software.aws.toolkits.jetbrains.core.credentials.ToolkitConnectionManagerListener
+import software.aws.toolkits.jetbrains.core.credentials.deleteSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.logoutFromSsoConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.CodeCatalystConnection
 import software.aws.toolkits.jetbrains.core.credentials.pinning.ConnectionPinningManagerListener
@@ -52,8 +53,6 @@ import software.aws.toolkits.jetbrains.core.credentials.sso.bearer.BearerTokenPr
 import software.aws.toolkits.jetbrains.core.explorer.AwsToolkitExplorerToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.DevToolsToolWindow
 import software.aws.toolkits.jetbrains.core.explorer.devToolsTab.nodes.CawsServiceNode
-import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionCW
-import software.aws.toolkits.jetbrains.core.gettingstarted.deleteSsoConnectionExplorer
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.BULLET_PANEL_HEIGHT
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.GOT_IT_ID_PREFIX
 import software.aws.toolkits.jetbrains.core.gettingstarted.editor.GettingStartedPanel.PanelConstants.PANEL_HEIGHT
@@ -65,7 +64,7 @@ import software.aws.toolkits.jetbrains.core.gettingstarted.requestCredentialsFor
 import software.aws.toolkits.jetbrains.services.caws.CawsEndpoints
 import software.aws.toolkits.jetbrains.services.caws.CawsResources
 import software.aws.toolkits.jetbrains.services.codewhisperer.learn.LearnCodeWhispererEditorProvider
-import software.aws.toolkits.jetbrains.ui.feedback.FeedbackDialog
+import software.aws.toolkits.jetbrains.ui.feedback.ToolkitFeedbackDialog
 import software.aws.toolkits.jetbrains.utils.isRunningOnRemoteBackend
 import software.aws.toolkits.jetbrains.utils.ui.editorNotificationCompoundBorder
 import software.aws.toolkits.resources.message
@@ -536,7 +535,7 @@ class GettingStartedPanel(
                         message("gettingstarted.auth.idc.sign.out.confirmation")
                     ).yesText(message("general.confirm")).ask(project)
                     if (confirmDeletion) {
-                        deleteSsoConnectionCW(connection)
+                        deleteSsoConnection(connection)
                     }
                 }
             }
@@ -677,7 +676,7 @@ class GettingStartedPanel(
                                             message("gettingstarted.auth.idc.sign.out.confirmation")
                                         ).yesText(message("general.confirm")).ask(project)
                                         if (confirmDeletion) {
-                                            deleteSsoConnectionExplorer(connection)
+                                            deleteSsoConnection(connection)
                                             controlPanelVisibility(panelConnected, panelNotConnected)
                                         }
                                     }
@@ -745,7 +744,7 @@ class GettingStartedPanel(
                                             message("gettingstarted.auth.idc.sign.out.confirmation")
                                         ).yesText(message("general.confirm")).ask(project)
                                         if (confirmDeletion) {
-                                            deleteSsoConnectionExplorer(connection)
+                                            deleteSsoConnection(connection)
                                             controlPanelVisibility(panelConnected, panelNotConnected)
                                         }
                                     }
@@ -898,7 +897,7 @@ class GettingStartedPanel(
                                                 message("gettingstarted.auth.idc.sign.out.confirmation")
                                             ).yesText(message("general.confirm")).ask(project)
                                             if (confirmDeletion) {
-                                                deleteSsoConnectionCW(connection)
+                                                deleteSsoConnection(connection)
                                             }
                                         }
                                     }
@@ -988,7 +987,7 @@ class GettingStartedPanel(
                                                 message("gettingstarted.auth.idc.sign.out.confirmation")
                                             ).yesText(message("general.confirm")).ask(project)
                                             if (confirmDeletion) {
-                                                deleteSsoConnectionCW(connection)
+                                                deleteSsoConnection(connection)
                                             }
                                         }
                                         logoutFromSsoConnection(project, connection) {
@@ -1244,7 +1243,7 @@ class GettingStartedPanel(
 class ShareFeedbackInGetStarted : DumbAwareAction() {
     override fun actionPerformed(e: AnActionEvent) {
         runInEdt {
-            FeedbackDialog(DefaultProjectFactory.getInstance().defaultProject).show()
+            ToolkitFeedbackDialog(DefaultProjectFactory.getInstance().defaultProject).show()
         }
     }
 }
