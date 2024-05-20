@@ -79,7 +79,7 @@ class CodeScanSessionConfig(
         }
 
         // Fail fast if the selected file size is greater than the payload limit.
-        if (selectedFile != null && selectedFile.length > getPayloadLimitInBytes()) {
+        if ((selectedFile != null && selectedFile.length > getPayloadLimitInBytes()) || (getProjectPayloadMetadata().payloadSize > getPayloadLimitInBytes())) {
             fileTooLarge()
         }
 
