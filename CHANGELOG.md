@@ -1,3 +1,18 @@
+# _3.8_ (2024-05-30)
+- **(Bug Fix)** fix(featureDev): File Rejection stopped working
+- **(Bug Fix)** Amazon Q Feature Development: Update error message when repo size larger than 200 megabytes
+- **(Bug Fix)** Always show device code prompt when performing device code grant through a legacy SSO configuration
+
+# _3.7_ (2024-05-29)
+- **(Bug Fix)** (featureDev): Revert fix for file rejection. Reason: The plan disappears after clicking generate Code
+- **(Bug Fix)** Amazon Q Code Transformation: show more specific error messages on failure cases
+
+# _3.6_ (2024-05-28)
+- **(Bug Fix)** Fix recurring popup "refreshing token" whne users're typing in the IDE and Q connection expires
+
+# _3.5_ (2024-05-23)
+- **(Bug Fix)** Amazon Q Code Transformation: show exact error messages in chat when job fails
+
 # _3.4_ (2024-05-16)
 - **(Bug Fix)** Amazon Q Chat: Prompt input field in Q Chat tabs doesn't stop after it reaches to the given maxLength
 - **(Bug Fix)** Amazon Q Chat: When window gets focus, even though the autoFocus property is set to true, input field doesn't get focus
