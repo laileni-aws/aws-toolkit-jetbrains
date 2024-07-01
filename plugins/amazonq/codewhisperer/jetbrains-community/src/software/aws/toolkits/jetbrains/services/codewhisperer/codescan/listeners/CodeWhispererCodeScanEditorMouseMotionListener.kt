@@ -258,6 +258,16 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             handleApplyFix(issue)
             button.isVisible = false
         }
+
+        val buttonSuppressFinding = JButton("Suppress Finding").apply {
+            toolTipText = "Suppress Finding"
+            putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
+        }
+        buttonSuppressFinding.addActionListener {
+            handleSupressFinding(issue)
+            buttonSuppressFinding.isVisible = false
+        }
+
         val nextButton = JButton(AllIcons.Actions.ArrowExpand).apply {
             preferredSize = Dimension(30, this.height)
             addActionListener {
@@ -288,6 +298,8 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
             if (issue.suggestedFixes.isNotEmpty()) {
                 add(button)
             }
+
+            add(buttonSuppressFinding)
         }
 
         val containerPane = JPanel().apply {
@@ -387,6 +399,26 @@ class CodeWhispererCodeScanEditorMouseMotionListener(private val project: Projec
 
     companion object {
         private val LOG = getLogger<CodeWhispererCodeScanEditorMouseMotionListener>()
+    }
+
+    private fun handleSupressFinding(issue: CodeWhispererCodeScanIssue) {
+        try{
+            WriteCommandAction.runWriteCommandAction(issue.project) {
+                val document = FileDocumentManager.getInstance().getDocument(issue.file) ?: return@runWriteCommandAction
+
+                val documentContent = document.text
+
+                document.insertString(document.getLineStartOffset(issue.startLine - 1),"## AmazonQ: Suppress This Finding\n")
+                PsiDocumentManager.getInstance(issue.project).commitDocument(document)
+                hidePopup()
+                if (CodeWhispererExplorerActionManager.getInstance().isAutoEnabledForCodeScan()) {
+                    CodeWhispererCodeScanManager.getInstance(issue.project).removeIssueByFindingId(issue.file, issue.findingId)
+                }
+            }
+            // TODO: Add telemetry for Suppress Finding
+        } catch (err: Error) {
+            LOG.error { "Suppress Finding command failed. $err" }
+        }
     }
 
     private fun handleApplyFix(issue: CodeWhispererCodeScanIssue) {
